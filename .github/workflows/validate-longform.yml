@@ -1,0 +1,30 @@
+name: Validate long-form documents
+on:
+  push:
+    branches: [main, feature/longform-rag-v1.1]
+    paths: ['js/**', 'data/**', 'index.html', 'css/**', 'tests/**', 'package.json', '.github/workflows/validate-longform.yml']
+  pull_request:
+permissions:
+  contents: read
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: npm install --ignore-scripts --no-audit --no-fund
+      - run: npx playwright install --with-deps chromium
+      - run: sudo apt-get install -y poppler-utils
+      - run: npm test
+      - run: npm run test:browser
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: longform-test-results
+          path: |
+            test-output/
+            tests/last-content-result.json
+          retention-days: 7

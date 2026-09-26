@@ -1,0 +1,13 @@
+{
+  "version": "1.1.0",
+  "industries": [
+    {"id":"it","name":"IT・情報サービス","path":"data/industries/it.json"},
+    {"id":"manufacturing","name":"製造業","path":"data/industries/manufacturing.json"},
+    {"id":"logistics","name":"物流・倉庫","path":"data/industries/logistics.json"},
+    {"id":"retail","name":"小売・店舗","path":"data/industries/retail.json"},
+    {"id":"hr","name":"人材・人事","path":"data/industries/hr.json"},
+    {"id":"accounting","name":"経理・事務サービス","path":"data/industries/accounting.json"},
+    {"id":"education","name":"教育・研修サービス","path":"data/industries/education.json"}
+  ],
+  "templates":"data/templates/longform.json"
+}

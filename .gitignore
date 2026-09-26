@@ -1,0 +1,5 @@
+node_modules/
+test-output/
+playwright-report/
+tests/last-content-result.json
+package-lock.json
