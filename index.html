@@ -1,50 +1,53 @@
 <!doctype html>
 <html lang="ja">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1">
-  <meta name="description" content="職務経歴書・求人票・製品マニュアル・業務マニュアルなど、内容のある架空業務文書をブラウザで生成。Word、Excel、PowerPoint、検索可能な日本語PDFに対応。RAG評価用の質問・根拠も出力できます。">
-  <title>Test Documents Creator | 長文の架空業務データを生成</title>
-  <link rel="stylesheet" href="css/style.css?v=1.1.0">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="description" content="職務経歴書・求人票・各種マニュアルなど、内容のある架空業務文書をブラウザで生成。Word、Excel、PowerPoint、日本語PDFとRAG評価データに対応。">
+<title>Test Documents Creator | 長文の架空業務データを生成</title>
+<link href="css/style.css?v=1.1.0" rel="stylesheet">
+<link href="css/theme.css?v=1.1.1" rel="stylesheet">
+<link href="assets/favicon-32.png?v=1.1.1" rel="icon" sizes="32x32" type="image/png">
+<meta name="theme-color" content="#213f77">
 </head>
 <body>
-<header><div class="brand">TEST DOCUMENTS CREATOR <span class="version">v1.1</span></div><h1>テストに使える、内容のある業務文書。</h1><p>業務の背景・判断条件・手順・事例を含む架空データを、ブラウザでまとめて生成。</p><div class="badges"><span>長文生成</span><span>日本語テキストPDF</span><span>RAG評価データ</span><span>APIキー不要</span></div></header>
-<main>
-  <div id="status" class="status" role="status" aria-live="polite">データ定義を読み込んでいます…</div>
-  <div class="status-actions"><button id="retry" hidden type="button" onclick="location.reload()">再読み込み</button><button id="cancel" hidden type="button">処理を中止</button></div>
-  <noscript><p class="status error">このアプリにはJavaScriptが必要です。</p></noscript>
-  <section>
-    <h2><span class="step">1</span>用途を選ぶ</h2>
-    <div class="grid"><label for="industry">業種<select id="industry" disabled><option value="">読み込み中</option></select></label><label for="job">職種<select id="job" disabled><option value="">業種を先に選択</option></select></label><label for="scene">業務・利用シーン<select id="scene" disabled><option value="">職種を先に選択</option></select></label></div>
-    <p id="profileInfo" class="hint">業種 → 職種 → 業務・利用シーンの順に選んでください。</p>
-  </section>
-  <section>
-    <div class="head"><div><h2><span class="step">2</span>作成できるドキュメント</h2><p class="hint">文書の種類と含まれる情報を確認して、生成するものにチェックします。</p></div><button id="selectDocs" type="button" disabled>すべて選択</button></div>
-    <div id="documents" class="empty">業務・利用シーンを選択してください。</div>
-  </section>
-  <section>
-    <h2><span class="step">3</span>生成条件</h2>
-    <div class="settings-grid">
-      <fieldset><legend>ファイル形式（複数選択可）</legend><div class="choices"><label><input type="checkbox" name="fmt" value="xlsx"> Excel</label><label><input type="checkbox" name="fmt" value="docx" checked> Word</label><label><input type="checkbox" name="fmt" value="pptx"> PowerPoint</label><label><input type="checkbox" name="fmt" value="pdf"> PDF</label></div><p class="hint">全形式に本文を収録。Excelは段落別のシート、PowerPointは複数スライドに分割します。</p></fieldset>
-      <fieldset><legend>生成件数</legend><div class="choices"><label><input type="radio" name="count" value="10" checked> 10件</label><label><input type="radio" name="count" value="30"> 30件</label><label><input type="radio" name="count" value="50" > 50件</label></div><p class="hint">生成するファイルの総数です。選択形式に振り分けます。</p></fieldset>
-      <label for="length">文章の詳しさ<select id="length"><option value="standard">標準｜約2,500〜3,000字</option><option value="long" selected>長文｜約4,000〜4,600字</option><option value="detailed">詳細｜約5,700〜6,400字</option></select><span class="hint">初期データの目安。実際の文字数を生成結果に表示します。</span></label>
-      <label for="seed">再現用シード<input id="seed" type="number" min="0" max="999999999" step="1" value="31415"><span class="hint">同じ業務・文書・設定・シードで同じ本文を再生成できます。</span></label>
-    </div>
-    <label class="evaluation-option"><input id="evaluation" type="checkbox" checked> ZIPにRAG評価用の質問・期待回答・根拠と文書メタデータを同梱</label>
-    <p class="hint">評価ファイルは本文と別フォルダです。検索対象に投入しないでください。</p>
-    <button id="generate" class="primary" type="button" disabled>長文テストドキュメントを生成</button>
-    <p class="note">実名・連絡先・住所・秘密情報は生成しません。各文書は独立した架空ケースです。文書間で設定値を混ぜないでください。</p>
-  </section>
-  <section id="resultPanel" hidden>
-    <div class="head"><div><h2><span class="step">4</span>生成結果 <span id="count" class="count"></span></h2><p id="resultSummary" class="hint"></p></div><div class="actions"><button id="all" type="button">全選択</button><button id="none" type="button">解除</button><button id="zip" class="primary" type="button">選択をZIP</button><button id="zipAll" type="button">すべてZIP</button></div></div>
-    <p id="selectedCount" class="hint">選択: 0件</p><div id="results"></div>
-  </section>
-  <details class="help"><summary>出力とRAG評価について</summary><p>内容プレビューは生成データの全文表示です。実際のWord・PDF・PowerPointのレイアウトとは異なります。PDFは日本語フォントを埋め込み、文字を選択・検索・抽出できる形式で作成します。</p><p>RAGにはZIP内の <code>documents/</code> だけを投入してください。<code>_evaluation/</code> は質問、期待回答、根拠箇所の確認用です。評価データを検索対象へ混ぜると正解が漏れます。</p><p>本文は、あらかじめ用意した架空の業務シナリオと文章テンプレートから作成します。実行時に生成AIや外部APIへ文書を送信しません。出力時はライブラリをCDNから、日本語PDFの初回出力時はフォントをGoogle Fontsの公開リポジトリから取得します。</p><p>アプリ・JSON・RAG評価ファイルはUTF-8です。Office文書とPDFは各形式の仕様に沿って出力します。CSV/TXTのShift_JIS出力はこの版には含めていません。</p></details>
-</main>
-<dialog id="preview" aria-labelledby="previewTitle"><div class="preview-tools"><h2 id="previewTitle">内容プレビュー</h2><button id="closePreview" type="button" aria-label="プレビューを閉じる">閉じる</button></div><p class="hint">本文の全文プレビューです。出力ファイルのレイアウトとは異なります。</p><div id="previewBody"></div></dialog>
-<footer>TEST DATA ONLY · v1.1 · UTF-8 · GitHub Pages<br>架空シナリオを用いたテスト用途専用。実際の応募・業務指示・法令や契約の判断には使用しないでください。</footer>
+<header class="hero"><div class="hero-inner"><div class="brand-block"><div aria-hidden="true" class="brand-mark"><i></i><i></i><i></i><i></i></div><div class="brand-copy"><div class="brand-line"><h1>TEST DOCUMENTS CREATOR</h1><span class="version">v1.1.1</span></div><p>架空の業務ドキュメントを、ブラウザだけでまとめて生成。</p><p class="hero-detail">職務経歴書・求人票・各種マニュアルから、RAGの検証用データまで。</p></div></div><img alt="みかんの帽子の猫。テストで使えるサンプルドキュメントをまとめて生成" class="header-cat" draggable="false" fetchpriority="high" height="241" src="assets/mascots/header-cat.webp?v=1.1.1" width="720"></div></header>
+<main class="app-shell">
+<div class="setup-area"><aside aria-hidden="true" class="mascot"><img alt="" draggable="false" height="240" src="assets/mascots/laptop-cat.webp?v=1.1.1" width="360"><div class="mascot-desk"></div></aside><div class="setup-panels">
+<section class="panel purpose-panel">
+<h2 class="section-title"><span class="step">1</span>用途を選ぶ</h2><p class="section-description">生成するドキュメントの前提となる業種・職種・業務シーンを選択してください。</p>
+<div class="grid">
+<label for="industry"><span class="field-label"><svg aria-hidden="true" class="icon" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.7" viewBox="0 0 24 24"><rect height="18" width="11" x="4" y="3"/><path d="M15 9h5v12h-5M2 21h20M7 7h1M11 7h1M7 11h1M11 11h1M7 15h1M11 15h1M9 21v-3"/></svg>業種</span><select disabled id="industry"><option value="">読み込み中</option></select></label>
+<label for="job"><span class="field-label"><svg aria-hidden="true" class="icon" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.7" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.4 3.6-7 8-7s8 2.6 8 7"/></svg>職種</span><select disabled id="job"><option value="">業種を先に選択</option></select></label>
+<label for="scene"><span class="field-label"><svg aria-hidden="true" class="icon" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.7" viewBox="0 0 24 24"><rect height="7" rx="1.5" width="7" x="3" y="3"/><rect height="7" rx="1.5" width="7" x="14" y="3"/><rect height="7" rx="1.5" width="7" x="3" y="14"/><rect height="7" rx="1.5" width="7" x="14" y="14"/></svg>業務・利用シーン</span><select disabled id="scene"><option value="">職種を先に選択</option></select></label>
+</div><p class="hint" id="profileInfo">業種 → 職種 → 業務・利用シーンの順に選んでください。</p>
+</section>
+<section class="panel documents-panel">
+<div class="head"><div><h2 class="section-title"><span class="step">2</span>作成できるドキュメント</h2><p class="hint">文書の種類と含まれる情報を確認して、生成するものにチェックします。</p></div><span class="hint document-selection" id="docSelectionCount"></span><button disabled id="selectDocs" type="button">すべて選択</button></div>
+<div class="empty" id="documents">業務・利用シーンを選択してください。</div>
+</section>
+<section class="panel settings-panel">
+<h2 class="section-title"><span class="step">3</span>生成条件</h2><p class="section-description">出力するファイル形式・件数・文章の詳しさを指定します。</p>
+<div class="settings-grid">
+<fieldset class="format-field"><legend>ファイル形式（複数選択可）</legend><div class="choices"><label class="format-choice"><input name="fmt" type="checkbox" value="xlsx"><span aria-hidden="true" class="file-icon xlsx">X</span> Excel</label><label class="format-choice"><input checked name="fmt" type="checkbox" value="docx"><span aria-hidden="true" class="file-icon docx">W</span> Word</label><label class="format-choice"><input name="fmt" type="checkbox" value="pptx"><span aria-hidden="true" class="file-icon pptx">P</span> PowerPoint</label><label class="format-choice"><input name="fmt" type="checkbox" value="pdf"><span aria-hidden="true" class="file-icon pdf">PDF</span> PDF</label></div><p class="hint">全形式に本文を収録。Excelは段落別のシート、PowerPointは複数スライドに分割します。</p></fieldset>
+<fieldset class="count-field"><legend>生成件数</legend><div class="choices"><label><input checked name="count" type="radio" value="10"> 10件</label><label><input name="count" type="radio" value="30"> 30件</label><label><input name="count" type="radio" value="50"> 50件</label></div><p class="hint">生成するファイルの総数です。選択形式に振り分けます。</p></fieldset>
+</div>
+<label class="length-option" for="length">文章の詳しさ<select id="length"><option value="standard">標準｜約2,500〜3,000字</option><option selected value="long">長文｜約4,000〜4,600字</option><option value="detailed">詳細｜約5,700〜6,400字</option></select><span class="hint">初期データの目安。実際の文字数を生成結果に表示します。</span></label>
+<details class="advanced" id="advanced"><summary>詳細設定<span id="advancedSummary">RAG評価データを同梱 ／ シード 31415</span></summary><div class="advanced-grid"><label for="seed">再現用シード<input id="seed" max="999999999" min="0" step="1" type="number" value="31415"><span class="hint">同じ業務・文書・設定・シードで同じ本文を再生成できます。</span></label><div class="evaluation-block"><label class="evaluation-option"><input checked id="evaluation" type="checkbox"> ZIPにRAG評価用の質問・期待回答・根拠と文書メタデータを同梱</label><p class="hint">評価ファイルは本文と別フォルダです。検索対象に投入しないでください。</p></div></div></details>
+<div class="generate-area"><button class="primary" disabled id="generate" type="button"><span aria-hidden="true" class="spark">✦</span><span>長文テストドキュメントを生成</span><span aria-hidden="true" class="arrow">→</span></button><p class="note">実名・連絡先・住所・秘密情報は生成しません。各文書は独立した架空ケースです。文書間で設定値を混ぜないでください。</p></div>
+</section></div></div>
+<div class="content-offset">
+<div aria-live="polite" aria-atomic="true" class="status" id="status" role="status">データ定義を読み込んでいます…</div><div class="status-actions"><button hidden id="retry" onclick="location.reload()" type="button">再読み込み</button><button hidden id="cancel" type="button">処理を中止</button></div><noscript><p class="status error">このアプリにはJavaScriptが必要です。</p></noscript>
+<section class="panel results-panel" hidden id="resultPanel">
+<div class="head"><div><h2><span class="step">4</span>生成結果 <span class="count" id="count"></span></h2><p class="hint" id="resultSummary"></p></div><div class="actions"><button id="all" type="button">全選択</button><button id="none" type="button">選択解除</button><button class="primary" id="zip" type="button">選択をZIP</button><button id="zipAll" type="button">すべてZIP</button></div></div>
+<p class="hint" id="selectedCount">選択: 0件</p><p class="hint evaluation-notice" id="resultEvaluation">RAG評価データを同梱します。検索対象は documents/ のみです。</p><div id="results"></div>
+</section>
+<details class="help"><summary>出力とRAG評価について</summary><p>内容プレビューは生成データの全文表示です。実際のWord・PDF・PowerPointのレイアウトとは異なります。PDFは日本語フォントを埋め込み、文字を選択・検索・抽出できる形式で作成します。</p><p>RAGにはZIP内の <code>documents/</code> だけを投入してください。<code>_evaluation/</code> は質問、期待回答、根拠箇所の確認用です。評価データを検索対象へ混ぜると正解が漏れます。</p><p>本文は、あらかじめ用意した架空の業務シナリオと文章テンプレートから作成します。実行時に生成AIや外部APIへ文書を送信しません。出力時はライブラリをCDNから、日本語PDFの初回出力時はフォントをGoogle Fontsの公開リポジトリから取得します。</p><p>アプリ・JSON・RAG評価ファイルはUTF-8です。Office文書とPDFは各形式の仕様に沿って出力します。CSV/TXTのShift_JIS出力はこの版には含めていません。</p></details>
+</div></main>
+<dialog aria-labelledby="previewTitle" id="preview"><div class="preview-tools"><h2 id="previewTitle">内容プレビュー</h2><button aria-label="プレビューを閉じる" id="closePreview" type="button">閉じる</button></div><p class="hint">本文の全文プレビューです。出力ファイルのレイアウトとは異なります。</p><div id="previewBody"></div></dialog>
+<footer>TEST DATA ONLY · UI v1.1.1<br>架空シナリオを用いたテスト用途専用。実際の応募・業務指示・法令や契約の判断には使用しないでください。</footer>
 <script type="module">
-  import('./js/app.js?v=1.1.0').catch(error => {
+  import('./js/app.js?v=1.1.0').then(() => import('./js/theme.js?v=1.1.1')).catch(error => {
     console.error(error);
     const status = document.getElementById('status');
     status.className = 'status error';

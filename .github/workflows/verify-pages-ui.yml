@@ -1,0 +1,43 @@
+name: Verify published Pages UI
+on:
+  workflow_run:
+    workflows: [pages build and deployment]
+    types: [completed]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  verify:
+    if: github.event_name == 'workflow_dispatch' || (github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.head_branch == 'main')
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: npm install --ignore-scripts --no-audit --no-fund
+      - run: npx playwright install --with-deps chromium
+      - run: sudo apt-get install -y poppler-utils
+      - name: Wait for the published release
+        shell: bash
+        run: |
+          for i in $(seq 1 30); do
+            if curl -fsSL 'https://makiabe.github.io/test-documents-creater/?v=1.1.1' | grep -q 'theme.js?v=1.1.1'; then exit 0; fi
+            sleep 5
+          done
+          exit 1
+      - name: Test real Pages URL and all four exporters
+        env:
+          TEST_BASE_URL: https://makiabe.github.io/test-documents-creater/?v=1.1.1
+        run: |
+          node tests/browser.test.mjs
+          node tests/ui.test.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: published-pages-ui-results
+          path: test-output/
+          retention-days: 7
