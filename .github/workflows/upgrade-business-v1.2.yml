@@ -1,32 +1,24 @@
-name: Build and validate business CV v1.2
+name: Validate business CV v1.2
 on:
   push:
-    branches: [feature/business-cv-v1.2]
-    paths: ['scripts/**', 'js/resume.js', 'tests/resume*', '.github/workflows/upgrade-business-v1.2.yml']
+    branches: [main, feature/business-cv-v1.2]
+    paths: ['js/**', 'css/**', 'data/**', 'tests/**', index.html, '.github/workflows/upgrade-business-v1.2.yml']
   workflow_dispatch:
 permissions:
-  contents: write
+  contents: read
 concurrency:
-  group: business-cv-v1.2
-  cancel-in-progress: false
+  group: business-cv-v1.2-${{ github.ref }}
+  cancel-in-progress: true
 jobs:
   validate:
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
-        with:
-          ref: feature/business-cv-v1.2
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-      - name: Apply the one-time reviewed migration
-        run: |
-          if ! grep -q "VERSION = '1.2.0'" js/content-engine.js; then
-            node scripts/build-business-data.mjs
-            node scripts/apply-v1.2.mjs
-          fi
-          for file in js/*.js; do node --check "$file"; done
+      - run: for file in js/*.js; do node --check "$file"; done
       - run: npm install --ignore-scripts --no-audit --no-fund
       - run: npx playwright install --with-deps chromium
       - run: sudo apt-get install -y poppler-utils
@@ -34,20 +26,11 @@ jobs:
         run: |
           npm test
           node tests/resume.test.mjs
-      - name: Check the UI, all exports and CV tables
+      - name: Check UI, full exports and CV tables
         run: |
           npm run test:browser
           node tests/ui.test.mjs
           node tests/resume-browser.test.mjs
-      - name: Store generated source after successful tests
-        run: |
-          git config user.name 'github-actions[bot]'
-          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add data js css index.html tests/browser.test.mjs tests/ui.test.mjs package.json README.md docs
-          if ! git diff --cached --quiet; then
-            git commit -m 'Generate v1.2 business catalog, dedicated CV exports and header spacing (tests passed)'
-            git push origin HEAD:feature/business-cv-v1.2
-          fi
       - name: Save exact tested source
         if: always()
         run: |
