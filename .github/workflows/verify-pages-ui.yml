@@ -30,14 +30,14 @@ jobs:
       - name: Wait for the published release
         shell: bash
         run: |
-          for i in $(seq 1 30); do
-            if curl -fsSL 'https://makiabe.github.io/test-documents-creater/?v=1.1.1' | grep -q 'theme.js?v=1.1.1'; then exit 0; fi
+          for i in $(seq 1 45); do
+            if curl -fsSL 'https://makiabe.github.io/test-documents-creater/?v=1.1.2' | grep -q 'theme.js?v=1.1.2'; then exit 0; fi
             sleep 5
           done
           exit 1
       - name: Test real Pages URL and all four exporters
         env:
-          TEST_BASE_URL: https://makiabe.github.io/test-documents-creater/?v=1.1.1
+          TEST_BASE_URL: https://makiabe.github.io/test-documents-creater/?v=1.1.2
         run: |
           node tests/browser.test.mjs
           node tests/ui.test.mjs
