@@ -1,0 +1,77 @@
+/* UI help-1: preserve the generator, source artwork and existing card geometry. */
+.mascot {
+  left: calc(-1 * var(--page-left) + 8px);
+  width: min(280px, calc(var(--page-left) + 130px));
+}
+.brand-actions {display:flex;align-items:center;gap:9px;flex-wrap:wrap}
+.header-nav {display:flex;align-items:center;gap:6px}
+.header-nav button {
+  min-height:32px;padding:5px 9px;border:1px solid #a7c9ff80;border-radius:7px;
+  background:#ffffff10;color:#fff;font-size:12px;line-height:1.5;font-weight:600;
+}
+.header-nav button:hover:not(:disabled) {background:#ffffff26;border-color:#d3e4ff;color:#fff}
+.header-nav button:focus-visible {outline:3px solid #ffdb80;outline-offset:3px}
+.brand-line {row-gap:6px}
+.info-modal-open {overflow:hidden}
+.info-dialog {
+  width:min(880px,calc(100vw - 32px));max-width:calc(100vw - 32px);
+  max-height:calc(100dvh - 48px);margin:auto;padding:0;overflow:hidden;
+  background:#fff;border:1px solid #d7e4f7;border-radius:18px;color:#18335c;
+  box-shadow:0 24px 90px #0b244d4d;
+}
+.info-dialog[open] {display:flex;flex-direction:column}
+.info-dialog::backdrop {background:#0e234d99;backdrop-filter:blur(3px)}
+.info-dialog-toolbar {
+  display:flex;align-items:center;justify-content:space-between;gap:16px;flex:none;
+  padding:20px 28px;border-bottom:1px solid #dce7f6;background:#f5f9ff;
+}
+.info-dialog-toolbar h2 {font-size:22px;line-height:1.4;margin:3px 0 0;overflow-wrap:anywhere}
+.info-eyebrow {font-size:10px;font-weight:750;letter-spacing:.14em;color:#5376aa}
+.info-close {min-height:40px;flex:none;padding:8px 14px;background:#fff}
+.info-dialog-body {overflow-y:auto;overscroll-behavior:contain;padding:24px 28px 30px;font-size:14px;line-height:1.9;min-height:0}
+.info-dialog-body p {margin:10px 0;overflow-wrap:anywhere}
+.info-dialog-body h3 {font-size:18px;line-height:1.6;margin:0 0 10px;color:#173967}
+.info-section {border:0;border-radius:0;box-shadow:none;padding:0;margin:0 0 26px;background:none}
+.info-lead {padding:17px 20px;background:#eef5ff;border-left:3px solid #2d7bff;border-radius:0 10px 10px 0}
+.info-use-cases {display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin:14px 0}
+.info-use-case {padding:16px;background:#f7faff;border:1px solid #e0e9f7;border-radius:10px}
+.info-use-case h4 {font-size:14px;line-height:1.7;margin:0 0 6px}
+.info-use-case p {font-size:13px;margin:0;color:#4b6383}
+.info-features {padding-left:24px;margin:12px 0}
+.info-features li {padding-left:5px;margin:14px 0}
+.info-features p {margin:4px 0;color:#4b6383}
+.info-note {font-size:12px;color:#536b8c}
+.info-disclaimer {padding:17px 20px;background:#fff9ed;border:1px solid #f1dfb7;border-radius:10px}
+.info-disclaimer h3 {font-size:15px;color:#715126}
+.info-disclaimer p {font-size:12px;color:#685942}
+.info-dialog code {padding:2px 5px;border-radius:4px;background:#eaf1fc;color:#244c84;font-size:.92em;overflow-wrap:anywhere}
+.info-footer {display:flex;justify-content:flex-end;flex-wrap:wrap;gap:10px;margin-top:22px;padding-top:18px;border-top:1px solid #e0e9f7}
+.info-footer button {min-height:42px}
+.faq-item {border:1px solid #dce7f6;border-radius:11px;margin-bottom:12px;overflow:hidden}
+.faq-item>summary {position:relative;list-style:none;cursor:pointer;padding:17px 45px 17px 18px;background:#f7faff;font-size:14px;font-weight:700;line-height:1.7}
+.faq-item>summary::-webkit-details-marker {display:none}
+.faq-item>summary::after {content:'＋';position:absolute;right:16px;top:16px;color:#386ec5;font-size:18px}
+.faq-item[open]>summary::after {content:'−'}
+.faq-answer {padding:8px 20px 18px;font-size:13px}
+.faq-answer ul {padding-left:21px;margin:12px 0}
+.faq-answer li {margin:8px 0;overflow-wrap:anywhere}
+@media(max-width:1100px) {.mascot {width:180px}}
+@media(max-width:900px) {
+  .mascot {display:none}
+  .brand-actions {gap:7px}
+  .header-nav button {font-size:11px;min-height:30px;padding:4px 7px}
+}
+@media(max-width:700px) {
+  .brand-actions {width:100%;gap:10px}
+  .header-nav button {min-height:38px;font-size:12px;padding:6px 10px}
+  .info-dialog {width:calc(100vw - 20px);max-width:calc(100vw - 20px);max-height:calc(100dvh - 24px);border-radius:14px}
+  .info-dialog-toolbar {padding:16px;gap:10px}
+  .info-dialog-toolbar h2 {font-size:18px}
+  .info-dialog-body {padding:20px 16px 24px;font-size:13px}
+  .info-dialog-body h3 {font-size:16px}
+  .info-use-cases {grid-template-columns:1fr}
+  .info-close {padding:7px 10px}
+  .info-lead,.info-disclaimer {padding:14px}
+  .faq-item>summary {padding:15px 38px 15px 14px;font-size:13px}
+  .faq-answer {padding:6px 14px 15px;font-size:13px}
+}
