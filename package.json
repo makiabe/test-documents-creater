@@ -1,1 +1,16 @@
-{"name":"test-documents-creater","version":"1.1.0","private":true,"type":"module","scripts":{"test":"node tests/content.test.mjs","test:browser":"node tests/browser.test.mjs"},"devDependencies":{"jszip":"3.10.1","playwright":"1.55.1"}}
+{
+  "name": "test-documents-creater",
+  "version": "1.2.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "node tests/content.test.mjs",
+    "test:browser": "node tests/browser.test.mjs",
+    "test:resume": "node tests/resume.test.mjs",
+    "test:resume-browser": "node tests/resume-browser.test.mjs"
+  },
+  "devDependencies": {
+    "jszip": "3.10.1",
+    "playwright": "1.55.1"
+  }
+}

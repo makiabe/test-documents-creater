@@ -19,8 +19,3 @@
 通常の追加は `data/industries/<業種>.json` の `profiles` と `data/manifest.json` を編集します。`career` に学部、事業内容、資格、研究テーマを指定できます。文書の種類は `data/templates/longform.json` に追加し、職種の `scenes[].templates` に登録します。職務経歴書だけは `renderer: "resume"` を指定する専用構成です。
 
 `scripts/business-seeds.mjs` と `scripts/build-business-data.mjs` は本版の初期投入用です。後からJSONを手で編集した場合は再実行で上書きしないよう注意してください。`scripts/apply-v1.2.mjs` は旧版からの一回限りの移行用で、通常のデータ追加には不要です。
-
-
-## 検証
-
-`npm test`、`npm run test:resume`、`npm run test:browser`、`npm run test:resume-browser` を実行します。ブラウザ検証にはChromiumとpdftotextを使用します。

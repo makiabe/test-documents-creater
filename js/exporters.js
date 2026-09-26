@@ -1,4 +1,4 @@
-import { DISCLAIMER, VERSION } from './content-engine.js?v=1.1.0';
+import { DISCLAIMER, VERSION, sectionText } from './content-engine.js?v=1.2.0';
 export const FONT_URL = 'https://raw.githubusercontent.com/google/fonts/a24c920263576ec723d64c1b26f8afabb841601d/ofl/mplus1p/MPLUS1p-Regular.ttf';
 const XML = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>';
 const MIME = {docx:'application/vnd.openxmlformats-officedocument.wordprocessingml.document',xlsx:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',pptx:'application/vnd.openxmlformats-officedocument.presentationml.presentation',pdf:'application/pdf'};
@@ -49,6 +49,13 @@ async function packed(zip,type){return new Blob([await zip.generateAsync({type:'
 function wordParagraph(text,style='Normal',keepNext=false) {
   return `<w:p><w:pPr><w:pStyle w:val="${style}"/>${keepNext?'<w:keepNext/>':''}</w:pPr><w:r><w:t xml:space="preserve">${xml(text)}</w:t></w:r></w:p>`;
 }
+function wordTable(table){
+ const widths=(table.widths||table.headers.map(()=>1/table.headers.length)).map(x=>Math.round(x*9638));
+ const grid='<w:tblGrid>'+widths.map(w=>'<w:gridCol w:w="'+w+'"/>').join('')+'</w:tblGrid>';
+ const row=(cells,header=false)=>'<w:tr><w:trPr><w:cantSplit/>'+(header?'<w:tblHeader/>':'')+'</w:trPr>'+cells.map((v,i)=>'<w:tc><w:tcPr><w:tcW w:w="'+widths[i]+'" w:type="dxa"/>'+(header?'<w:shd w:fill="EAF0F8"/>':'')+'</w:tcPr><w:p><w:pPr><w:spacing w:after="80" w:before="80" w:line="280" w:lineRule="auto"/></w:pPr><w:r><w:rPr><w:sz w:val="20"/>'+(header?'<w:b/>':'')+'</w:rPr><w:t xml:space="preserve">'+xml(v)+'</w:t></w:r></w:p></w:tc>').join('')+'</w:tr>';
+ const borders=['top','left','bottom','right','insideH','insideV'].map(k=>'<w:'+k+' w:val="single" w:sz="4" w:color="D5DFEA"/>').join('');
+ return '<w:tbl><w:tblPr><w:tblW w:w="9638" w:type="dxa"/><w:tblBorders>'+borders+'</w:tblBorders><w:tblLayout w:type="fixed"/><w:tblCellMar><w:top w:w="50" w:type="dxa"/><w:left w:w="100" w:type="dxa"/><w:bottom w:w="50" w:type="dxa"/><w:right w:w="100" w:type="dxa"/></w:tblCellMar></w:tblPr>'+grid+row(table.headers,true)+table.rows.map(r=>row(r)).join('')+'</w:tbl>'+wordParagraph('','Caption');
+}
 export async function toDocx(doc) {
   const Zip=await loadLibrary('zip'), z=new Zip();
   addMetadata(z,doc);z.file('_rels/.rels',packageRoot('word/document.xml'));
@@ -57,11 +64,21 @@ export async function toDocx(doc) {
   const wns='http://schemas.openxmlformats.org/wordprocessingml/2006/main';
   z.file('word/styles.xml',XML+`<w:styles xmlns:w="${wns}"><w:docDefaults><w:rPrDefault><w:rPr><w:rFonts w:ascii="Yu Gothic" w:hAnsi="Yu Gothic" w:eastAsia="Yu Gothic"/><w:sz w:val="22"/><w:lang w:val="ja-JP" w:eastAsia="ja-JP"/></w:rPr></w:rPrDefault><w:pPrDefault><w:pPr><w:spacing w:after="160" w:line="340" w:lineRule="auto"/></w:pPr></w:pPrDefault></w:docDefaults><w:style w:type="paragraph" w:default="1" w:styleId="Normal"><w:name w:val="Normal"/></w:style><w:style w:type="paragraph" w:styleId="Title"><w:name w:val="Title"/><w:basedOn w:val="Normal"/><w:pPr><w:spacing w:before="200" w:after="320"/></w:pPr><w:rPr><w:b/><w:sz w:val="38"/><w:color w:val="213E68"/></w:rPr></w:style><w:style w:type="paragraph" w:styleId="Heading1"><w:name w:val="heading 1"/><w:basedOn w:val="Normal"/><w:pPr><w:keepNext/><w:keepLines/><w:spacing w:before="300" w:after="180"/><w:outlineLvl w:val="0"/></w:pPr><w:rPr><w:b/><w:sz w:val="28"/><w:color w:val="213E68"/></w:rPr></w:style><w:style w:type="paragraph" w:styleId="Caption"><w:name w:val="Caption"/><w:basedOn w:val="Normal"/><w:rPr><w:sz w:val="17"/><w:color w:val="64748B"/></w:rPr></w:style></w:styles>`);
   z.file('word/footer1.xml',XML+`<w:ftr xmlns:w="${wns}"><w:p><w:pPr><w:jc w:val="center"/></w:pPr><w:r><w:rPr><w:sz w:val="16"/></w:rPr><w:t>TEST DATA ONLY / </w:t></w:r><w:fldSimple w:instr="PAGE"><w:r><w:t>1</w:t></w:r></w:fldSimple></w:p></w:ftr>`);
-  let body=wordParagraph(doc.title,'Title')+wordParagraph(DISCLAIMER,'Caption');
-  for(const t of [`文書ID: ${doc.id}`,`対象: ${doc.company} / ${doc.subject}`,`適用版: ${doc.version} / シード: ${doc.seed}`, '各文書は独立した架空ケースです。別文書の条件を混ぜて参照しないでください。']) body+=wordParagraph(t,'Caption');
-  body+=wordParagraph('目次','Heading1');
-  for(const s of doc.sections)body+=wordParagraph(`${s.number}. ${s.title}`,'Caption');
-  for(const s of doc.sections){body+=wordParagraph(`${s.number}. ${s.title}`,'Heading1');body+=wordParagraph(`章ID: ${s.id}`,'Caption',true);for(const p of s.paragraphs)body+=wordParagraph(p);}
+  let body=wordParagraph(doc.title,'Title');
+  if(doc.asOfDate){
+    body+=wordParagraph(doc.asOfDate.replace(/(\d+)-(\d+)-(\d+)/,(_,y,m,d)=>y+'年'+Number(m)+'月'+Number(d)+'日現在'),'Caption');
+    body+=wordParagraph(DISCLAIMER,'Caption');
+  }else{
+    body+=wordParagraph(DISCLAIMER,'Caption');
+    for(const text of ['文書ID: '+doc.id,'対象: '+doc.company+' / '+doc.subject,'適用版: '+doc.version+' / シード: '+doc.seed])body+=wordParagraph(text,'Caption');
+    body+=wordParagraph('目次','Heading1');for(const s of doc.sections)body+=wordParagraph(s.number+'. '+s.title,'Caption');
+  }
+  for(const s of doc.sections){
+    body+=wordParagraph(s.number+'. '+s.title,'Heading1');
+    if(!doc.asOfDate)body+=wordParagraph('章ID: '+s.id,'Caption',true);
+    if(s.table)body+=wordTable(s.table);
+    for(const text of s.paragraphs)body+=wordParagraph(text,'Normal',/^【.+】$/.test(text));
+  }
   body+=`<w:sectPr><w:footerReference w:type="default" r:id="rId2"/><w:pgSz w:w="11906" w:h="16838"/><w:pgMar w:top="1134" w:right="1134" w:bottom="1134" w:left="1134" w:header="500" w:footer="500"/><w:cols w:space="720"/></w:sectPr>`;
   z.file('word/document.xml',XML+`<w:document xmlns:w="${wns}" xmlns:r="${R}"><w:body>${body}</w:body></w:document>`);
   return packed(z,'docx');
@@ -77,7 +94,7 @@ export async function toXlsx(doc){
   const meta=[['項目','内容'],['文書名',doc.title],['文書ID',doc.id],['対象組織',doc.company],['対象業務',doc.subject],['適用版',doc.version],['シード',doc.seed],['文字数',doc.charCount],['データ区分',DISCLAIMER],['収録方法','本文シートに全段落を収録しています。各文書は独立した架空ケースです。']];
   const body=[['章ID','見出し','段落・分割番号','本文（全文収録）']];
   const outline=[['章ID','見出し','段落数']];
-  for(const s of doc.sections){outline.push([s.id,s.title,s.paragraphs.length]);s.paragraphs.forEach((p,pi)=>{const chars=Array.from(p);for(let k=0;k<chars.length;k+=150)body.push([s.id,s.title,`${pi+1}-${1+Math.floor(k/150)}`,chars.slice(k,k+150).join('')]);});}
+  for(const s of doc.sections){outline.push([s.id,s.title,s.paragraphs.length]);sectionText(s).forEach((p,pi)=>{const chars=Array.from(p);for(let k=0;k<chars.length;k+=150)body.push([s.id,s.title,`${pi+1}-${1+Math.floor(k/150)}`,chars.slice(k,k+150).join('')]);});}
   const sheets=[{name:'文書情報',rows:meta,widths:[26,100]},{name:'本文',rows:body,widths:[40,40,18,90]},{name:'章索引',rows:outline,widths:[40,55,16]}];
   z.file('[Content_Types].xml',XML+`<Types xmlns="${CONTENT_TYPES}">${typeBase}<Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/><Override PartName="/xl/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml"/>${sheets.map((_,i)=>`<Override PartName="/xl/worksheets/sheet${i+1}.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>`).join('')}</Types>`);
   z.file('xl/workbook.xml',XML+`<workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="${R}"><bookViews><workbookView/></bookViews><sheets>${sheets.map((s,i)=>`<sheet name="${s.name}" sheetId="${i+1}" r:id="rId${i+1}"/>`).join('')}</sheets></workbook>`);
@@ -100,10 +117,10 @@ export async function toPptx(doc){
   const Pptx=await loadLibrary('pptx'), p=new Pptx();p.layout='LAYOUT_WIDE';p.author='Test Documents Creator';p.subject=DISCLAIMER;p.title=doc.title;p.company='SYNTHETIC';p.lang='ja-JP';p.theme={headFontFace:'Yu Gothic',bodyFontFace:'Yu Gothic',lang:'ja-JP'};
   let page=0;
   function slide(title,caption){const s=p.addSlide();page++;s.background={color:'FFFFFF'};s.addText(title,{x:.65,y:.4,w:12,h:.7,fontFace:'Yu Gothic',fontSize:22,bold:true,color:'213E68',margin:0,breakLine:false});s.addText(caption,{x:.65,y:1.15,w:12,h:.25,fontFace:'Yu Gothic',fontSize:9,color:'64748B',margin:0});s.addText(`TEST DATA ONLY | ${doc.id} | ${page}`,{x:.65,y:7.08,w:12,h:.18,fontSize:8,color:'64748B',margin:0});return s;}
-  const cover=slide(doc.title,doc.id);
+  const cover=slide(doc.title,doc.asOfDate?doc.asOfDate+'現在 / '+doc.id:doc.id);
   cover.addText([DISCLAIMER,`対象: ${doc.company}`,`業務: ${doc.subject}`,`適用版: ${doc.version}`, '本文を省略せず複数スライドに分割して収録しています。', '各文書は独立したケースです。別文書の条件を混ぜないでください。'].join('\n\n'),{x:.75,y:1.85,w:11.7,h:4.7,fontSize:18,fontFace:'Yu Gothic',margin:0,breakLine:false});
   for(const section of doc.sections){
-    const lines=section.paragraphs.flatMap(x=>[...wrapCharacters(x), '']);
+    const lines=sectionText(section).flatMap(x=>[...wrapCharacters(x), '']);
     for(let k=0;k<lines.length;k+=12){
       const s=slide(`${section.number}. ${section.title}${k?'（続き）':''}`,section.id);
       s.addText(lines.slice(k,k+12).join('\n'),{x:.75,y:1.75,w:11.7,h:4.95,fontFace:'Yu Gothic',fontSize:17,margin:0,valign:'top',paraSpaceAfterPt:0,breakLine:false});
@@ -144,12 +161,31 @@ export async function toPdf(doc){
     for(const l of lines){if(y+leading>bottom)newPage();p.text(l,left,y);y+=leading;}
     y+=after;
   }
-  paragraph(doc.title,18,[33,62,104],5);paragraph(DISCLAIMER,8,[100,116,139],4);
-  paragraph(`文書ID: ${doc.id}\n対象: ${doc.company}\n業務: ${doc.subject}\n適用版: ${doc.version}`,9,[71,85,105],5);
-  paragraph('各文書は独立した架空ケースです。別文書の設定値を混ぜず、文書IDと適用条件を確認してください。',9,[71,85,105],5);
+  function drawTable(table){
+    p.setFont('MPLUS1p','normal');p.setFontSize(9);
+    const widths=(table.widths||table.headers.map(()=>1/table.headers.length)).map(w=>w*right);
+    const split=(text,max)=>{let lines=[],line='';for(const ch of String(text)){if(p.getTextWidth(line+ch)>max&&line){lines.push(line);line='';}line+=ch;}lines.push(line);return lines;};
+    const leading=4.8,padding=2.3;
+    function row(cells,header=false){
+      p.setFontSize(9);
+      const wrapped=cells.map((t,i)=>split(t,widths[i]-padding*2));
+      const h=Math.max(...wrapped.map(x=>x.length))*leading+padding*2;
+      if(h>bottom-32)throw new Error('表の1行が長すぎます。段落に分割してください。');
+      if(y+h>bottom){newPage();if(!header)row(table.headers,true);}
+      let x=left;
+      cells.forEach((_,i)=>{p.setDrawColor(210,220,234);p.setFillColor(...(header?[234,240,248]:[255,255,255]));p.rect(x,y,widths[i],h,'FD');p.setTextColor(30,41,59);for(let j=0;j<wrapped[i].length;j++)p.text(wrapped[i][j],x+padding,y+padding+3.4+j*leading);x+=widths[i];});
+      y+=h;
+    }
+    row(table.headers,true);table.rows.forEach(r=>row(r));y+=8;
+  }
+  paragraph(doc.title,18,[33,62,104],5);
+  if(doc.asOfDate)paragraph(doc.asOfDate.replace(/(\d+)-(\d+)-(\d+)/,(_,y,m,d)=>y+'年'+Number(m)+'月'+Number(d)+'日現在'),9,[71,85,105],4);paragraph(DISCLAIMER,8,[100,116,139],4);
+  if(!doc.asOfDate)paragraph(`文書ID: ${doc.id}\n対象: ${doc.company}\n業務: ${doc.subject}\n適用版: ${doc.version}`,9,[71,85,105],5);
+  if(!doc.asOfDate)paragraph('各文書は独立した架空ケースです。別文書の設定値を混ぜず、文書IDと適用条件を確認してください。',9,[71,85,105],5);
   for(const s of doc.sections){
     if(y+35>bottom)newPage();
-    paragraph(`${s.number}. ${s.title}`,13,[33,62,104],1);paragraph(`章ID: ${s.id}`,7,[100,116,139],2);
+    paragraph(`${s.number}. ${s.title}`,13,[33,62,104],1);if(!doc.asOfDate)paragraph(`章ID: ${s.id}`,7,[100,116,139],2);
+    if(s.table){y+=2;drawTable(s.table);}
     for(const text of s.paragraphs)paragraph(text);
   }
   const total=p.getNumberOfPages();

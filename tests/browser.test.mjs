@@ -16,7 +16,7 @@ const normal=s=>s.replace(/\s/g,'');
 const decode=s=>s.replace(/&lt;/g,'<').replace(/&gt;/g,'>').replace(/&quot;/g,'"').replace(/&apos;/g,"'").replace(/&amp;/g,'&');
 const runs=(xml,tag)=>[...xml.matchAll(new RegExp(`<${tag}(?: [^>]*)?>([\\s\\S]*?)<\\/${tag}>`,'g'))].map(m=>decode(m[1])).join('');
 try{
- await page.goto(url);await page.waitForFunction(()=>document.querySelector('#industry').options.length===8);
+ await page.goto(url);await page.waitForFunction(()=>document.querySelector('#industry').options.length===17);
  await page.selectOption('#industry','it');await page.waitForFunction(()=>document.querySelector('#job').options.length===3);
  await page.selectOption('#job','engineer');await page.selectOption('#scene','operations');
  assert.equal(await page.locator('.dsel').count(),2);await page.selectOption('#length','detailed');await page.click('#generate');
@@ -24,12 +24,12 @@ try{
  await page.screenshot({path:path.join(out,'ui.png'),fullPage:true});
  await page.click('[data-preview="0"]');assert.ok(await page.locator('.preview-section').count()>15);
  await page.screenshot({path:path.join(out,'preview.png')});await page.click('#closePreview');
- const source=await page.evaluate(async()=> (await import('./js/app.js?v=1.1.0')).getGenerated()[0]);
+ const source=await page.evaluate(async()=> (await import('./js/app.js?v=1.2.0')).getGenerated()[0]);
  await fs.writeFile(path.join(out,'source.json'),JSON.stringify(source,null,2));
  const paragraphs=source.sections.flatMap(s=>s.paragraphs);
  for(const format of ['docx','xlsx','pptx','pdf']){
   const bytes=await page.evaluate(async format=>{
-   const app=await import('./js/app.js?v=1.1.0'),exp=await import('./js/exporters.js?v=1.1.0');
+   const app=await import('./js/app.js?v=1.2.0'),exp=await import('./js/exporters.js?v=1.2.0');
    const doc=structuredClone(app.getGenerated()[0]);doc.format=format;
    return Array.from(new Uint8Array(await (await exp.exportDocument(doc)).arrayBuffer()));
   },format);
@@ -64,8 +64,8 @@ try{
  assert.ok(q.filter(x=>x.answerable).every(x=>x.evidence));
  for(const f of ['xlsx','pptx','pdf'])await page.check(`input[name=fmt][value=${f}]`);
  await page.check('input[name=count][value="50"]');await page.click('#generate');assert.equal(await page.locator('.result').count(),50);
- const formats=await page.evaluate(async()=>[...new Set((await import('./js/app.js?v=1.1.0')).getGenerated().map(x=>x.format))]);assert.equal(formats.length,4);
- await page.selectOption('#industry','hr');await page.waitForFunction(()=>document.querySelector('#job').options.length===2);assert.ok(await page.locator('#resultPanel').isHidden());
+ const formats=await page.evaluate(async()=>[...new Set((await import('./js/app.js?v=1.2.0')).getGenerated().map(x=>x.format))]);assert.equal(formats.length,4);
+ await page.selectOption('#industry','hr');await page.waitForFunction(()=>document.querySelector('#job').options.length===3);assert.ok(await page.locator('#resultPanel').isHidden());
  await page.selectOption('#job','recruiter');await page.selectOption('#scene','hiring');await page.locator('#advanced').evaluate(el=>el.open=true);await page.fill('#seed','');await page.click('#generate');assert.ok((await page.locator('#status').innerText()).includes('シード'));
  await page.fill('#seed','42');await page.check('input[name=count][value="10"]');await page.click('#generate');
  await page.setViewportSize({width:390,height:844});await page.screenshot({path:path.join(out,'mobile.png'),fullPage:true});assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=window.innerWidth));

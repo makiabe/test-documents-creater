@@ -1,5 +1,6 @@
+import {buildResume} from './resume.js?v=1.2.0';
 /** Pure, deterministic generation. No network, eval, LLM, or real customer data. */
-export const VERSION = '1.1.0';
+export const VERSION = '1.2.0';
 export const FORMATS = ['xlsx', 'docx', 'pptx', 'pdf'];
 export const LEVELS = { standard: 0, long: 1, detailed: 2 };
 export const DISCLAIMER = 'TEST DATA ONLY / 本文書はテスト用の架空情報です。実在する人物・組織・製品の記録や規程ではありません。';
@@ -42,8 +43,9 @@ export function validateIndustry(pack) {
 export function validateTemplates(data) {
   if (!data?.templates || typeof data.templates !== 'object') throw new Error('文書テンプレートを読み込めません。');
   for (const [id, t] of Object.entries(data.templates)) {
-    for (const k of ['name','description','phaseTitle','caseTitle']) requireText(t[k], `${id}.${k}`);
+    for (const k of (t.renderer === 'resume' ? ['name','description'] : ['name','description','phaseTitle','caseTitle'])) requireText(t[k], `${id}.${k}`);
     if (!t.formats?.length || t.formats.some(f => !FORMATS.includes(f))) throw new Error(`${id}: 未対応の形式です。`);
+    if (t.renderer === 'resume') continue;
     if (!t.facts?.length || !t.sections?.length || !t.phaseText?.length || !t.caseText?.length) throw new Error(`${id}: 本文定義が不足しています。`);
     const ids = new Set();
     for (const s of [...t.facts, ...t.sections]) {
@@ -59,10 +61,14 @@ export function interpolate(text, values) {
     return String(values[key]);
   });
 }
+export function sectionText(section) {
+  const table = section.table;
+  return [...(table ? table.rows.map(row => row.map((value, i) => table.headers[i] + '：' + value).join(' ／ ')) : []), ...section.paragraphs];
+}
 export function plainText(doc) {
   return [doc.title, DISCLAIMER, `文書ID: ${doc.id}`, `ケースID: ${doc.caseId}`, `業種: ${doc.industry}`, `職種: ${doc.role}`, `対象: ${doc.subject}`, `適用版: ${doc.version}`,
     '各文書は独立した架空ケースです。別文書の設定値を混ぜず、文書IDと適用条件を確認してください。',
-    ...doc.sections.flatMap(s => [`${s.number}. ${s.title} [${s.id}]`, ...s.paragraphs])].join('\n\n');
+    ...doc.sections.flatMap(s => [`${s.number}. ${s.title} [${s.id}]`, ...sectionText(s)])].join('\n\n');
 }
 export function generateDocument({ industry, profile, template, templateId, seed, index = 0, level = 'long', format = 'docx' }) {
   if (!(level in LEVELS)) throw new Error('文書の長さが不正です。');
@@ -92,6 +98,11 @@ export function generateDocument({ industry, profile, template, templateId, seed
     const s = { id: `${id}-S${pad(number, 2)}`, key, number, title: interpolate(title, v), paragraphs: paragraphs.map(p => interpolate(p, v)) };
     sections.push(s); return s;
   }
+  let resumeResult;
+  if (template.renderer === 'resume') {
+    resumeResult=buildResume({profile,id,index,depth:LEVELS[level],integer});
+    sections.push(...resumeResult.sections);questions.push(...resumeResult.questions);
+  } else {
   for (const f of template.facts) {
     const s = add(`fact-${f.id}`, f.title, [f.text]);
     questions.push({ questionId: `${id}-Q${pad(questions.length + 1, 2)}`, documentId: id, type: f.kind,
@@ -113,11 +124,13 @@ export function generateDocument({ industry, profile, template, templateId, seed
     add(`case-${i + 1}`, interpolate(template.caseTitle, values), template.caseText.slice(0, depth + 1).map(x => interpolate(x, values)));
   }
   questions.push({ questionId: `${id}-Q99`, documentId: id, type: 'unanswerable', question: `文書ID「${id}」について、2030年度の確定した売上目標額はいくらですか。`, answer: 'この文書には記載されていません。', answerable: false, sourceSectionId: null, evidence: null });
-  const doc = { schemaVersion: 1, generatorVersion: VERSION, id, caseId: `TEST-CASE-${run}-${serial}`,
+  }
+  const doc = { schemaVersion: 2, generatorVersion: VERSION, id, caseId: `TEST-CASE-${run}-${serial}`,
     industry: industry.name, industryId: industry.id, role: profile.role, profileId: profile.id, templateId,
     title: `${template.name}｜${profile.role}`, subject: profile.theme, company: v.company, version: v.version,
     seed, index, level, format, sections, questions, facts: v,
     filename: `${template.name}_${profile.id}_${id}.${format}` };
+  if(resumeResult){Object.assign(doc,resumeResult);doc.facts={...v,candidate:resumeResult.candidate};}
   doc.charCount = Array.from(plainText(doc)).length;
   doc.contentFingerprint = fingerprint(plainText(doc)); // Non-cryptographic, for reproducibility only.
   if (/\{\{[^}]+\}\}/.test(plainText(doc))) throw new Error('未置換の差し込み項目があります。');

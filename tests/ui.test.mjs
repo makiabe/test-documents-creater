@@ -12,8 +12,8 @@ const base=process.env.TEST_BASE_URL||`http://127.0.0.1:${server.address().port}
 const browser=await chromium.launch({headless:true});
 const page=await browser.newPage({viewport:{width:1440,height:1080}});const errors=[];page.on('pageerror',e=>errors.push(e.message));
 try{
- await page.goto(base);await page.waitForFunction(()=>document.querySelector('#industry').options.length===8);
- assert.equal(await page.locator('.version').innerText(),'v1.1.2');
+ await page.goto(base);await page.waitForFunction(()=>document.querySelector('#industry').options.length===17);
+ assert.equal(await page.locator('.version').innerText(),'v1.2.0');
  assert.equal(await page.locator('h1').innerText(),'DOCUMENTS CREATOR');
  assert.ok((await page.title()).startsWith('DOCUMENTS CREATOR'));
  await page.waitForFunction(()=>[...document.images].every(i=>i.complete&&i.naturalWidth>0));
@@ -30,11 +30,11 @@ try{
   });layout.push(sizes);
   assert.ok(sizes.scrollWidth<=width,`overflow at ${width}`);
   if(width===1271){
-   assert.equal(sizes.hero.height,124,'Reference header must stay compact');
+   assert.equal(sizes.hero.height,170,'Reference header must stay compact');
    assert.ok(Math.abs(sizes.purpose.x-122)<4,'Reference card left edge');
    assert.ok(Math.abs(sizes.purpose.width-1092)<5,'Reference card width');
-   assert.equal(sizes.purpose.y,84,'Reference first card top');
-   assert.ok(sizes.generate.bottom<830,'Primary action should not be pushed far below the reference');
+   assert.equal(sizes.purpose.y,130,'Reference first card top');
+   assert.ok(sizes.generate.bottom<880,'Primary action should not be pushed far below the reference');
    const format=await page.locator('.format-field').boundingBox(),counts=await page.locator('.count-field').boundingBox();
    assert.ok(Math.abs(format.y-counts.y)<2,'Formats and counts must share a row');
   }

@@ -1,5 +1,5 @@
-import {VERSION,DISCLAIMER,validateIndustry,validateTemplates,createBatch,evaluationFiles} from './content-engine.js?v=1.1.0';
-import {exportDocument,loadLibrary} from './exporters.js?v=1.1.0';
+import {VERSION,DISCLAIMER,validateIndustry,validateTemplates,createBatch,evaluationFiles} from './content-engine.js?v=1.2.0';
+import {exportDocument,loadLibrary} from './exporters.js?v=1.2.0';
 const $=s=>document.querySelector(s),$$=s=>Array.from(document.querySelectorAll(s));
 const escape=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 let manifest,templates,pack,documents=[],loadId=0,busy=false,cancelled=false;
@@ -35,9 +35,13 @@ function render(){
  $('#results').innerHTML=documents.map((d,i)=>`<div class="result"><input class="rsel" type="checkbox" value="${i}" aria-label="${escape(d.filename)}を選択"><div><div class="filename">${escape(d.filename)}</div><div class="stats">${d.charCount.toLocaleString()}字 · ${d.sections.length}章 · ${escape(d.role)}</div></div><span class="format-badge">${d.format.toUpperCase()}</span><div class="actions"><button type="button" data-preview="${i}">プレビュー</button><button type="button" data-save="${i}">保存</button></div></div>`).join('');selectionCount();
  $('#resultPanel').scrollIntoView({behavior:'smooth',block:'start'});
 }
+function previewTable(table){
+ if(!table)return '';
+ return '<div class="preview-table-wrap"><table class="resume-table"><thead><tr>'+table.headers.map(h=>'<th scope="col">'+escape(h)+'</th>').join('')+'</tr></thead><tbody>'+table.rows.map(row=>'<tr>'+row.map(cell=>'<td>'+escape(cell)+'</td>').join('')+'</tr>').join('')+'</tbody></table></div>';
+}
 function preview(i){
  const d=documents[i];if(!d)return;$('#previewTitle').textContent=d.title;
- $('#previewBody').innerHTML=`<div class="preview-meta">${escape(DISCLAIMER)}<br>文書ID：${escape(d.id)}<br>対象：${escape(d.company)} / ${escape(d.subject)}<br>適用版：${escape(d.version)} ／ ${d.charCount.toLocaleString()}字 ／ シード ${d.seed}</div><details class="preview-toc"><summary>目次（開く）</summary>${d.sections.map(s=>`<a href="#preview-${s.id}">${s.number}. ${escape(s.title)}</a>`).join('')}</details>${d.sections.map(s=>`<section class="preview-section" id="preview-${s.id}"><h3>${s.number}. ${escape(s.title)}</h3><div class="sid">${s.id}</div>${s.paragraphs.map(p=>`<p>${escape(p)}</p>`).join('')}</section>`).join('')}`;
+ $('#previewBody').innerHTML=`<div class="preview-meta">${escape(DISCLAIMER)}<br>文書ID：${escape(d.id)}<br>対象：${escape(d.company)} / ${escape(d.subject)}<br>${d.asOfDate?'作成基準日：'+escape(d.asOfDate):'適用版：'+escape(d.version)} ／ ${d.charCount.toLocaleString()}字 ／ シード ${d.seed}</div><details class="preview-toc"><summary>目次（開く）</summary>${d.sections.map(s=>`<a href="#preview-${s.id}">${s.number}. ${escape(s.title)}</a>`).join('')}</details>${d.sections.map(s=>`<section class="preview-section" id="preview-${s.id}"><h3>${s.number}. ${escape(s.title)}</h3><div class="sid">${s.id}</div>${previewTable(s.table)}${s.paragraphs.map(p=>`<p>${escape(p)}</p>`).join('')}</section>`).join('')}`;
  $('#preview').showModal();$('#preview').scrollTop=0;
 }
 function save(blob,name){const url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download=name;document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),30000);}
