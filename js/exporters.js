@@ -46,8 +46,8 @@ function packageRoot(main) {
 }
 const typeBase='<Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/docProps/core.xml" ContentType="application/vnd.openxmlformats-package.core-properties+xml"/><Override PartName="/docProps/app.xml" ContentType="application/vnd.openxmlformats-officedocument.extended-properties+xml"/>';
 async function packed(zip,type){return new Blob([await zip.generateAsync({type:'uint8array',compression:'DEFLATE'})],{type:MIME[type]});}
-function wordParagraph(text,style='Normal') {
-  return `<w:p><w:pPr><w:pStyle w:val="${style}"/></w:pPr><w:r><w:t xml:space="preserve">${xml(text)}</w:t></w:r></w:p>`;
+function wordParagraph(text,style='Normal',keepNext=false) {
+  return `<w:p><w:pPr><w:pStyle w:val="${style}"/>${keepNext?'<w:keepNext/>':''}</w:pPr><w:r><w:t xml:space="preserve">${xml(text)}</w:t></w:r></w:p>`;
 }
 export async function toDocx(doc) {
   const Zip=await loadLibrary('zip'), z=new Zip();
@@ -61,7 +61,7 @@ export async function toDocx(doc) {
   for(const t of [`文書ID: ${doc.id}`,`対象: ${doc.company} / ${doc.subject}`,`適用版: ${doc.version} / シード: ${doc.seed}`, '各文書は独立した架空ケースです。別文書の条件を混ぜて参照しないでください。']) body+=wordParagraph(t,'Caption');
   body+=wordParagraph('目次','Heading1');
   for(const s of doc.sections)body+=wordParagraph(`${s.number}. ${s.title}`,'Caption');
-  for(const s of doc.sections){body+=wordParagraph(`${s.number}. ${s.title}`,'Heading1');body+=wordParagraph(`章ID: ${s.id}`,'Caption');for(const p of s.paragraphs)body+=wordParagraph(p);}
+  for(const s of doc.sections){body+=wordParagraph(`${s.number}. ${s.title}`,'Heading1');body+=wordParagraph(`章ID: ${s.id}`,'Caption',true);for(const p of s.paragraphs)body+=wordParagraph(p);}
   body+=`<w:sectPr><w:footerReference w:type="default" r:id="rId2"/><w:pgSz w:w="11906" w:h="16838"/><w:pgMar w:top="1134" w:right="1134" w:bottom="1134" w:left="1134" w:header="500" w:footer="500"/><w:cols w:space="720"/></w:sectPr>`;
   z.file('word/document.xml',XML+`<w:document xmlns:w="${wns}" xmlns:r="${R}"><w:body>${body}</w:body></w:document>`);
   return packed(z,'docx');

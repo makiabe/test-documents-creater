@@ -7,7 +7,7 @@ const root=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'..');
 const load=p=>JSON.parse(fs.readFileSync(path.join(root,p),'utf8'));
 const manifest=load('data/manifest.json');
 const templates=validateTemplates(load(manifest.templates));
-let count=0;const sizes={standard:[],long:[],detailed:[]};
+let count=0;const sizes={standard:[],long:[],detailed:[]};const allIds=new Set();
 for(const ref of manifest.industries){
  const industry=validateIndustry(load(ref.path));
  for(const profile of industry.profiles)for(const [templateId,template]of Object.entries(templates)){
@@ -16,6 +16,8 @@ for(const ref of manifest.industries){
    const cfg={industry,profile,template,templateId,seed:31415,index:0,level,format:'docx'};
    const doc=generateDocument(cfg),text=plainText(doc);
    assert.deepEqual(doc,generateDocument(cfg),'determinism');
+   assert.ok(!allIds.has(doc.id),'different templates and lengths need distinct document IDs');allIds.add(doc.id);
+   assert.equal(doc.id,generateDocument({...cfg,format:'pdf'}).id,'format conversion must preserve document ID');
    assert.ok(doc.charCount>last,'longer mode must add real authored content');last=doc.charCount;
    assert.ok(!/\{\{|\[JP\]|undefined|NaN/.test(text));
    assert.equal(new Set(doc.sections.map(x=>x.id)).size,doc.sections.length);

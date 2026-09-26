@@ -71,7 +71,7 @@ export function generateDocument({ industry, profile, template, templateId, seed
   const rng = random(`${VERSION}|${seed}|${industry.id}|${profile.id}|${templateId}|${index}`);
   const integer = (a, b) => a + Math.floor(rng() * (b - a + 1));
   const serial = pad(index + 1);
-  const run = fingerprint(`${VERSION}|${seed}|${industry.id}|${profile.id}`);
+  const run = fingerprint(`${VERSION}|${seed}|${industry.id}|${profile.id}|${templateId}|${level}`);
   const id = `TEST-DOC-${run}-${serial}`;
   const total = integer(180, 480), pending = integer(6, 20), returned = integer(5, 18);
   const before = integer(24, 40), after = integer(4, 12), startYear = integer(2015, 2018);
