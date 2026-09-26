@@ -1,0 +1,35 @@
+name: Validate UI redesign
+on:
+  push:
+    branches: [feature/cat-ui-v1.1.1]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: npm install --ignore-scripts --no-audit --no-fund
+      - run: npx playwright install --with-deps chromium
+      - run: sudo apt-get install -y poppler-utils
+      - run: npm test
+      - run: npm run test:browser
+      - name: Run visual regression checks when present
+        run: |
+          if test -f tests/ui.test.mjs; then node tests/ui.test.mjs; fi
+      - name: Include exact tested source for inspection
+        if: always()
+        run: |
+          mkdir -p test-output
+          tar -czf test-output/tested-source.tar.gz index.html css js data package.json tests
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: ui-regression-results
+          path: test-output/
+          retention-days: 7
