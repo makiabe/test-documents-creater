@@ -88,6 +88,18 @@ if (version) {
     opener.addEventListener('click', () => openDialog(entry.id));
     dialog.querySelectorAll('[data-info-close]').forEach(button => button.addEventListener('click', () => dialog.close()));
     dialog.querySelector('[data-info-switch]').addEventListener('click', event => openDialog(event.currentTarget.dataset.infoSwitch));
+    // Loop keyboard focus instead of letting Tab continue into browser chrome.
+    dialog.addEventListener('keydown', event => {
+      if (event.key !== 'Tab') return;
+      const targets = [...dialog.querySelectorAll('button:not([disabled]), summary, a[href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])')].filter(el => el.getClientRects().length > 0);
+      const first = targets[0], last = targets.at(-1);
+      if (!first) return;
+      if (event.shiftKey && (document.activeElement === first || document.activeElement === dialog)) {
+        event.preventDefault(); last.focus();
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault(); first.focus();
+      }
+    });
     // Light dismiss only when both pointer-down and click are outside the dialog box.
     let startedOutside = false;
     const outside = event => {
