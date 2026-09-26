@@ -1,0 +1,52 @@
+name: Assemble supplied design assets
+on:
+  push:
+    branches: [feature/cat-ui-v1.1.1]
+    paths: [.github/workflows/assemble-design-assets.yml]
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  assemble:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Verify artwork and store binary Git objects
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          node --input-type=module <<'JS'
+          import {createHash} from 'node:crypto';
+          const base = `https://api.github.com/repos/${process.env.GITHUB_REPOSITORY}/git/blobs`;
+          const headers = {Authorization: `Bearer ${process.env.GH_TOKEN}`, Accept: 'application/vnd.github+json', 'Content-Type':'application/json'};
+          async function get(sha) {
+            const r = await fetch(`${base}/${sha}`, {headers});
+            if (!r.ok) throw new Error(`Read ${sha}: ${r.status}`);
+            const data = await r.json();
+            return Buffer.from(data.content.replace(/\s/g,''), 'base64');
+          }
+          async function store(name, bytes, expected) {
+            const hash = createHash('sha256').update(bytes).digest('hex');
+            if(hash !== expected) throw new Error(`Checksum mismatch for ${name}: ${hash}`);
+            const r = await fetch(base, {method:'POST',headers,body:JSON.stringify({encoding:'base64',content:bytes.toString('base64')})});
+            if(!r.ok) throw new Error(`Write ${name}: ${r.status}`);
+            const result = await r.json();
+            console.log(JSON.stringify({name,sha:result.sha,sha256:hash,bytes:bytes.length}));
+          }
+          const assets = [
+            {name:'assets/mascots/header-cat.webp',hash:'c17cdd6097b182467ac07ccf9c09c22e4c62f5be7b3b79c20271b7d84248da07',parts:['102067618d3ad98451b2f94802df34eafb877d30','5e9d0df5ebe16d100803423f7fe0fcf60d23046a','471e0ce18b601eabe74ad90eafb66b98d81ee15a','3350b46db596251eef3d087fa11b664d1c66bdea','de0cd7ff058a6ece47343cd42a34dee547f63581','29ea07399b43d57e1cb78c7ec1b1b8dc6161774e','7a31347a8b3a906428a1ee66db9ac61aaa386835','3eff4cf4e841d370589084a067047f25b9312856','5767b40238e5ff43b17cc5a5923c4c2497f9390e','899526ba27a1e69732c46b394050f249331cccfd']},
+            {name:'assets/mascots/laptop-cat.webp',hash:'1eca070774aa7f68395d8e0e2323699f0bf800ac1f7b8af30a8e6ba760409d96',parts:['51ba4da4a981e7ea89c8a189a4df711e78ecef90','ad405336a9979495a5f1db1faf32138c0e7b9f75','d054476606ca7e9b18f92f41365425643456e2f8','700549bff1cb29d555f78b08b7c8b98e78069fde','52ac1e9275dab1e0dada316a366fe05464cc1aa6']}
+          ];
+          for(const asset of assets) {
+            let content='';
+            for(const sha of asset.parts) content+=(await get(sha)).toString('utf8');
+            await store(asset.name,Buffer.from(content.replace(/\s/g,''),'base64'),asset.hash);
+          }
+          // Correct a transfer-character typo, then require the original icon's checksum.
+          const icon=(await get('7b120bd48a975706357f3268e0c5598e650f9d15')).toString('base64').replace('F0lnreFz3H3','F0lnreF/3H3');
+          await store('assets/favicon-32.png',Buffer.from(icon,'base64'),'169da59116c58b28effe51b99381f3fb97d3eccf416f10a9f1ba65b9735e2c10');
+          JS
