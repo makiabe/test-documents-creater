@@ -43,9 +43,19 @@ try {
   }
   await page.setViewportSize({width:1271,height:960});
   await page.click('#openFaq');assert.ok(await page.locator('#faqDialog').isVisible());
-  assert.equal(await page.locator('#faqDialog .faq-item').count(),5);
-  await page.locator('.faq-item').nth(1).locator('summary').click();
-  assert.ok((await page.locator('#faqDialog').innerText()).includes('_metadata/'));
+  const faqItems=page.locator('#faqDialog .faq-item');
+  assert.equal(await faqItems.count(),4);
+  assert.deepEqual(await faqItems.locator('summary').allTextContents(),[
+    'Q1. 商用利用や外部ベンダーへの提供に使えますか？',
+    'Q2. PDFの文字は検索・テキスト抽出できますか？',
+    'Q3. 毎回同じ内容のドキュメントを再現できますか？',
+    'Q4. 外部の生成AI APIを裏で呼び出していますか？'
+  ]);
+  assert.ok(!(await page.locator('#faqDialog').textContent()).includes('ZIP内の documents/ と _evaluation/'));
+  assert.ok(!(await page.locator('#faqDialog').textContent()).includes('_metadata/'));
+  await faqItems.nth(1).locator('summary').click();
+  assert.ok(await faqItems.nth(1).locator('.faq-answer').isVisible());
+  assert.ok((await faqItems.nth(1).innerText()).includes('テキストPDF'));
   await page.screenshot({path:path.join(out,'site-help-faq.png')});
   for(let i=0;i<12;i++) {
     await page.keyboard.press('Tab');
@@ -78,5 +88,5 @@ try {
   await page.mouse.click(5,5);await page.waitForFunction(()=>!document.querySelector('#faqDialog').open);
   assert.deepEqual(errors,[]);
   await fs.writeFile(path.join(out,'site-help-metrics.json'),JSON.stringify(metrics,null,2));
-  console.log('PASS: complete mascot bounds at 13 widths, header links, 5 FAQs, About, keyboard focus/Escape/backdrop, retained generation/selection and existing preview.');
+  console.log('PASS: complete mascot bounds at 13 widths, header links, 4 sequential FAQs, removed ZIP FAQ, About, keyboard focus/Escape/backdrop, retained generation/selection and existing preview.');
 } finally {await browser.close();await new Promise(resolve=>server.close(resolve));}

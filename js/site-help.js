@@ -37,23 +37,17 @@ const faq = `
 <p>収録する人物名・企業名・案件内容などは、テスト用途の架空設定を組み合わせたものです。実在の個人情報や本番の業務データを加工したものではありません。内容と提供先のルールをご確認のうえ、自己責任でご活用ください。</p>
 <p>この案内は生成したテスト文書の利用に関するものです。アプリ本体・猫などの画像素材・外部ライブラリ・フォント自体の再配布には、それぞれの権利・ライセンス条件が適用されます。</p>
 </div></details>
-<details class="faq-item"><summary>Q2. ZIP内の documents/ と _evaluation/ はなぜ分かれていますか？</summary><div class="faq-answer">
-<p><strong>A. 検索インデックスに正解データが混入する「データリーク」を防ぐためです。</strong></p>
-<ul><li><code>documents/</code>：ベクターDBや検索エンジンへ投入する文書ファイルです。</li><li><code>_evaluation/</code>：質問・期待回答・本文の根拠など、評価側で利用するデータです。検索対象に混ぜないでください。</li><li><code>_metadata/</code>：文書ID・シード・文字数など、再現・管理用の情報です。こちらも検索対象から除外してください。</li></ul>
-<p>RAGには<strong>documents/ だけ</strong>を投入します。Ragas・TruLens等に評価データを渡す場合は、利用するバージョンや評価指標に合わせて項目を変換し、実際の検索結果や生成回答を用意してください。専用形式への自動変換・自動採点機能は含まれていません。</p>
-<p>評価データとメタデータは、同梱オプションをONにしてZIP保存した場合に追加されます。個別ダウンロードは文書ファイルのみです。</p>
-</div></details>
-<details class="faq-item"><summary>Q3. PDFの文字は検索・テキスト抽出できますか？</summary><div class="faq-answer">
+<details class="faq-item"><summary>Q2. PDFの文字は検索・テキスト抽出できますか？</summary><div class="faq-answer">
 <p><strong>A. はい。画像だけのPDFではなく、日本語フォントを埋め込んだテキストPDFを生成します。</strong></p>
 <p>文字の選択・コピー・検索や、PDFパーサーによるテキスト抽出に利用できます。ただし、読み取り順・改行・表の復元結果は、利用するビューアーやパーサーの仕様・バージョンに依存します。</p>
 <p>pypdf・pdfminerなど、すべてのパーサーで同じ結果になることや、文字化けが一切起きないことを保証するものではありません。ご利用の環境で抽出結果を検証してください。</p>
 </div></details>
-<details class="faq-item"><summary>Q4. 毎回同じ内容のドキュメントを再現できますか？</summary><div class="faq-answer">
+<details class="faq-item"><summary>Q3. 毎回同じ内容のドキュメントを再現できますか？</summary><div class="faq-answer">
 <p><strong>A. はい。同じ生成条件・シード・ジェネレーターとデータの版で、同じ本文を再生成できます。</strong></p>
 <p>「詳細設定」のシード値（初期値：<code>31415</code>）に加えて、業種・職種・シーン、文書と形式の選択、件数、文章の詳しさを揃えてください。アプリの更新でテンプレートや生成ロジックが変わると、同じシードでも内容が変わる場合があります。</p>
 <p>本文を使った回帰テストに活用できますが、OfficeファイルやZIP内には作成日時などが含まれる場合があるため、ファイル全体のバイト単位の一致は保証していません。</p>
 </div></details>
-<details class="faq-item"><summary>Q5. 外部の生成AI APIを裏で呼び出していますか？</summary><div class="faq-answer">
+<details class="faq-item"><summary>Q4. 外部の生成AI APIを裏で呼び出していますか？</summary><div class="faq-answer">
 <p><strong>A. いいえ。文書生成にChatGPTやClaudeなどの生成AI APIは使用していません。</strong></p>
 <p>あらかじめ用意した架空の業務シナリオと文章テンプレートをブラウザ内で組み合わせる方式です。APIキーの設定は不要で、本ツールの文書生成に生成AI APIの利用料はかかりません。</p>
 <p>一方、アプリの表示・データ定義の読み込みや、出力ライブラリ・日本語フォントの取得には通信が発生します。初回のPDF出力などでは読み込み時間がかかることがあります。別途利用するRAG評価ツールの外部通信や利用料金は、そのツールの設定に依存します。</p>
