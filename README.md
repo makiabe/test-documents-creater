@@ -1,5 +1,7 @@
 # DOCUMENTS CREATOR v1.2.0
 
+https://makiabe.github.io/test-documents-creater/
+
 ## 更新点
 
 16業種、32職種、224利用シーン、12文書種類。従来の7業種・8職種・24シーン・6種類から拡充しました。
